@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace = "com.spring5.pro00.mapper.ReplMapper">
+
+<!--게시물의 댓글 목록 조회
+<select id = "selectReplList" resultType="com.spring5.pro00.domain.ReplVO">
+	SELECT bno, rno, rcontent, rwriter, rregdate, prno, LEVEL AS lvl 
+	FROM( SELECT /*+ INDEX (tbl_repl IDX_REPL_BNO_RNO) */ * 
+	      FROM book_ex.tbl_repl 
+	      WHERE bno = #{bno} )
+	START WITH prno IS NULL 
+	CONNECT BY PRIOR rno = prno 
+	ORDER SIBLINGS BY rregdate DESC
+</select> -->
+
+<select id = "selectReplTotCnt" resultType = "int">
+	SELECT COUNT(*) FROM book_ex.tbl_repl WHERE bno = #{ReplPagingDTO.bno}
+</select>
+
+<!-- 게시물의 댓글 목록 조회 페이징 추가 -->
+<select id = "selectReplList" resultType="com.spring5.pro00.domain.ReplVO">
+	SELECT bno, rno, rcontent, rwriter, rregDate, rmodDate, prno, lvl
+	FROM ( SELECT ROWNUM rn, b.*
+	        FROM ( SELECT LEVEL AS lvl, a.*
+	                FROM ( SELECT /*+ INDEX_ASC (tbl_repl IDX_REPL_BNO_RNO) */ *
+	                        FROM book_ex.tbl_repl
+	                        WHERE bno = #{ReplPagingDTO.bno}
+	                    ) a
+	                START WITH prno IS NULL
+	                CONNECT BY PRIOR rno = prno
+	                ORDER SIBLINGS BY rregdate DESC
+	             ) b
+	     )
+	WHERE rn BETWEEN #{ReplPagingDTO.pageNum} * #{ReplPagingDTO.rowCntPerPage} 
+	- (#{ReplPagingDTO.rowCntPerPage} - 1) 
+	AND #{ReplPagingDTO.rowCntPerPage} * #{ReplPagingDTO.rowCntPerPage}
+</select>
+
+<!-- 게시물의 댓글 등록 -->
+<insert id = "insertReplForBoard">
+	<selectKey keyProperty="rno" order="BEFORE" resultType="long">
+		SELECT book_ex.seq_repl.NEXTVAL FROM dual;
+	</selectKey>
+	INSERT INTO book_ex.tbl_repl 
+	VALUES(#{bno}, #{rno}, #{rcontent}, #{rwriter}, DEFAULT, DEFAULT, DEFAULT)
+</insert>
+
+<!-- 게시물의 댓글에 대한 답글 등록 -->
+<insert id = "insertReplForRepl">
+	<selectKey keyProperty="rno" order="BEFORE" resultType="long">
+		SELECT book_ex.seq_repl.NEXTVAL FROM dual;
+	</selectKey>
+	INSERT INTO book_ex.tbl_repl 
+	VALUES(#{bno}, #{rno}, #{rcontent}, #{rwriter}, DEFAULT, DEFAULT, #{prno})
+</insert>
+	
+<!-- 게시물의 댓글 한개 선택 -->
+<select id="selectRepl" resultType="com.spring5.pro00.domain.ReplVO">
+	SELECT bno, rno, rcontent, rwriter, rregDate, rmodDate 
+	FROM book_ex.tbl_repl 
+	WHERE bno = #{bno} AND rno = #{rno}
+</select>
+
+<update id="updateRepl">
+	UPDATE book_ex.tbl_repl 
+	SET rcontent = #{rcontent}, rmodDate = DEFAULT 
+	WHERE bno = #{bno} AND rno = #{rno}
+</update>
+
+<delete id="deleteRepl">
+	DELETE FROM book_ex.tbl_repl WHERE bno = #{bno} AND rno = #{rno}
+</delete>
+
+</mapper>

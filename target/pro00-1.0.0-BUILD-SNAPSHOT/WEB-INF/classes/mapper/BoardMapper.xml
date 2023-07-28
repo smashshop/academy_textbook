@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace = "com.spring5.pro00.mapper.BoardMapper">
+
+	<!-- 검색기능 추가된 카운트 -->
+	<select id = "selectBoardCnt" resultType="long">
+		SELECT COUNT(*) AS totalCnt FROM book_ex.tbl_board
+		<where>
+			<trim prefix="(" suffix=")" prefixOverrides="OR">
+				<foreach item='scope' collection="scopeArray">
+					<trim prefix="OR">
+						<choose>
+							<when test="scope == 'T'.toString()">btitle LIKE '%'||#{keyword}||'%'</when>
+							<when test="scope == 'C'.toString()">bcontent LIKE '%'||#{keyword}||'%'</when>
+							<when test="scope == 'W'.toString()">bwriter LIKE '%'||#{keyword}||'%'</when>
+						</choose>
+					</trim>
+				</foreach>
+			</trim>
+		</where>
+	</select>
+
+	<!-- <select id = "selectBoardCnt" resultType="long">
+		SELECT COUNT(bno) AS totalCnt FROM book_ex.tbl_board
+	</select> -->
+
+	<!-- 페이징 기능과 검색기능 추가 -->
+	<select id="selectBoardList" resultType="com.spring5.pro00.domain.BoardVO">
+	<![CDATA[
+		SELECT bno, btitle, bcontent, bwriter, bregdate, bmoddate, bviewCnt, bdelflag
+		FROM (SELECT /*+ INDEX_DESC (a pk_board) */ ROWNUM rn, a.*
+      		  FROM book_ex.tbl_board a
+      		  WHERE 
+    ]]>
+					<trim prefix="(" suffix=") AND" prefixOverrides="OR">
+						<foreach item='scope' collection="scopeArray">
+							<trim prefix="OR">
+								<choose>
+									<when test="scope == 'T'.toString()">btitle LIKE '%'||#{keyword}||'%'</when>
+									<when test="scope == 'C'.toString()">bcontent LIKE '%'||#{keyword}||'%'</when>
+									<when test="scope == 'W'.toString()">bwriter LIKE '%'||#{keyword}||'%'</when>
+								</choose>
+							</trim>
+						</foreach>
+					</trim>
+    <![CDATA[
+   					ROWNUM <= (#{pageNum} * #{rowCntPerPage})
+      		  )
+		WHERE rn >= ((#{pageNum} * #{rowCntPerPage}) - (#{rowCntPerPage} - 1))
+	]]>
+	</select>
+
+	<!-- 페이징 처리 기능 추가한 셀렉트 -->
+	<!-- <select id="selectBoardList" resultType="com.spring5.pro00.domain.BoardVO">
+	<![CDATA[
+		SELECT bno, btitle, bcontent, bwriter, bregdate, bmoddate, bviewCnt, bdelflag
+		FROM (SELECT /*+ INDEX_DESC (a pk_board) */ ROWNUM rn, a.*
+      		  FROM book_ex.tbl_board a
+      		  WHERE ROWNUM <= (#{pageNum} * #{rowCntPerPage})
+      		  )
+		WHERE rn >= ((#{pageNum} * #{rowCntPerPage}) - (#{rowCntPerPage} - 1))
+	]]>
+	</select> -->
+	
+	<!-- <select id="selectBoardList" resultType="com.spring5.pro00.domain.BoardVO">
+		SELECT * FROM book_ex.tbl_board
+		WHERE bno > 0
+		ORDER BY bregdate desc
+	</select> -->
+	
+<!-- 	<insert id="insertBoardList1" parameterType="com.spring5.pro00.domain.BoardVO">
+		INSERT INTO book_ex.tbl_board VALUES 
+		    (book_ex.seq_board.nextval,
+		    #{btitle},
+		    #{bcontent},
+		    #{bwriter},
+		    DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT)
+	</insert> -->
+	
+	<insert id = "insertBoard">
+		<selectKey keyProperty="bno" order="BEFORE" resultType="long">
+			SELECT book_ex.seq_board.nextval FROM dual
+		</selectKey>
+		INSERT INTO book_ex.tbl_board VALUES 
+		    (#{bno},
+		    #{btitle},
+		    #{bcontent},
+		    #{bwriter},
+		    DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT)
+	</insert>
+	
+	<select id = "selectBoard" parameterType="long" resultType="com.spring5.pro00.domain.BoardVO">
+		SELECT * FROM book_ex.tbl_board WHERE bno = #{bno}
+	</select>
+	
+	<update id = "updateBdelFlag" parameterType="long">
+		UPDATE book_ex.tbl_board
+		SET bdelflag = 1
+		WHERE bno = #{bno}
+	</update>
+	
+	<delete id = "deleteBoard" parameterType="long">
+		DELETE FROM book_ex.tbl_board WHERE bno = #{bno}
+	</delete>
+	
+	<update id = "updateBoard" parameterType = "com.spring5.pro00.domain.BoardVO">
+		UPDATE book_ex.tbl_board
+		SET btitle = #{btitle}, bcontent = #{bcontent}, bmodDate = DEFAULT
+		WHERE bno = #{bno}
+	</update>
+	
+	<update id = "updateBviewCnt" parameterType = "long">
+		UPDATE book_ex.tbl_boar
+		SET bviewCnt = bviewCnt + 1
+		WHERE bno = #{bno}
+	</update>
+</mapper>

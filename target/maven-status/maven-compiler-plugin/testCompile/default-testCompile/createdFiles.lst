@@ -1,0 +1,6 @@
+com\spring5\pro00\datasource01\DataSourceTests.class
+com\spring5\pro00\mapper02\ReplMapperTests.class
+sample\sampleTests.class
+com\spring5\pro00\controller04\BoardControllerTests.class
+com\spring5\pro00\mapper02\MyBoardMapperTests.class
+com\spring5\pro00\service3\BoardServiceTests.class
